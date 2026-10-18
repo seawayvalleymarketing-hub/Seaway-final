@@ -1,0 +1,14 @@
+SEAWAY VALLEY WEBSITE: START HERE
+
+This folder has 14 files and NO sub-folders. Keep it that way.
+Upload ALL of these files, together, to the top level of a NEW, EMPTY GitHub repository,
+then follow the step-by-step instructions you were sent in the chat.
+
+index.html   the public website
+admin.html   the pharmacist dashboard (opens at  your-site-address/admin)
+server.js, store.js, auth.js, slots.js, tz.js, fax.js, faxdoc.js, pdf.js, metrics.json   the program
+package.json, render.yaml   setup files for Render
+
+Dashboard password to start with:  gmnfe-xyath-zdkez-tzatr   (change it inside the dashboard after you sign in)
+Faxing starts in TEST mode: nothing is faxed until a real fax account is connected.
+Use made-up patient details while testing.
