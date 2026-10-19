@@ -46,7 +46,7 @@ const isAdmin = (req) => !!auth.readToken(cookies(req).sv_admin);
 const SEC = {
   'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 };
 
 // ---------- fax model validation ----------
@@ -79,7 +79,8 @@ async function apiSlots(req, res) {
 }
 
 async function apiSubmit(req, res) {
-  if (auth.limited('submit:' + ip(req), 10, 3600e3)) return send(res, 429, { error: 'rate', message: 'Too many requests from this connection. Please call the pharmacy at (613) 253-3334.' });
+  // Spam guard: a few requests per 10 minutes and a handful per hour from one connection. Only counts, never stores form content.
+  if (auth.limited('submit10:' + ip(req), 4, 600e3) || auth.limited('submit:' + ip(req), 12, 3600e3)) return send(res, 429, { error: 'rate', message: 'You have sent several requests in a short time. Please wait a few minutes before trying again, or call the pharmacy at (613) 253-3334.' });
   let b; try { b = await readBody(req); } catch (e) { return send(res, e.code || 400, { error: 'bad_request' }); }
   if (b.website) return send(res, 200, { ok: true, ref: 'OK' }); // honeypot: bots fill hidden fields
   const kind = b.kind;
