@@ -585,7 +585,12 @@ footer{border-top:1px solid var(--ring)}
 </style>
 <style id="ph">.hero .wrap>.store{display:block;width:290px;justify-self:center;aspect-ratio:4/5;border-radius:44px;background:linear-gradient(160deg,#EEF3FD,#E3EDFD);box-shadow:0 0 0 1px var(--ring),0 50px 90px -40px rgba(11,36,71,.35)}@media (max-width:759px){.hero .wrap>.store{border-radius:32px;width:calc(100vw - 44px)}}</style>
 <style id="rfx">
-.rf{max-width:560px}
+.rf{max-width:480px}
+.rfmore{display:grid;grid-template-rows:0fr;visibility:hidden;opacity:0;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1),opacity .35s ease,visibility 0s linear .45s}
+.rfmore.rfo{grid-template-rows:1fr;visibility:visible;opacity:1;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1),opacity .35s ease .08s,visibility 0s}
+.rfmi{overflow:hidden;min-height:0;display:grid;gap:12px}
+.rfmi>*{min-width:0}
+@media (prefers-reduced-motion:reduce){.rfmore,.rfmore.rfo{transition:none}}
 .rf [hidden],.rfq [hidden]{display:none!important}
 .rf .opt{display:flex;gap:12px;align-items:center;font-weight:500;font-size:15px;padding:12px 14px;margin:0}
 .rf .opt input{margin:0}
@@ -660,13 +665,14 @@ footer{border-top:1px solid var(--ring)}
     <h2>Refill in under a minute.</h2>
     <p class="lead2">Enter your prescription number and we'll have it ready. Pick it up, or we'll bring it to you.</p>
     <form class="rf" id="rfform" novalidate onsubmit="return false">
-      <label><span>Prescription number(s) <small>or medication name</small></span><input id="rx" name="rx" inputmode="text" autocomplete="off" placeholder="Found on your bottle label"></label>
-      <div class="row2">
-        <label>Name on prescription<input id="rn" name="rn" autocomplete="name"></label>
-        <label>Date of birth<input id="rdob" name="rdob" type="date" autocomplete="bday"></label>
-      </div>
-      <label>Phone number<input id="rph" name="rph" type="tel" inputmode="tel" autocomplete="tel" placeholder="(613) 555-0123"></label>
+      <label>Prescription number<input id="rx" name="rx" inputmode="text" autocomplete="off" placeholder="Number on your bottle label, or the medication name"></label>
+      <label>Name on prescription<input id="rn" name="rn" autocomplete="name"></label>
       <div class="chips" role="group" aria-label="Pickup or delivery"><button type="button" aria-pressed="true" data-ful="Pick up at the pharmacy">Pick up</button><button type="button" aria-pressed="false" data-ful="Free delivery to my door">Delivery</button></div>
+      <div class="rfmore" id="rfmore" inert><div class="rfmi">
+      <div class="row2">
+        <label>Date of birth<input id="rdob" name="rdob" type="date" autocomplete="bday"></label>
+        <label>Phone number<input id="rph" name="rph" type="tel" inputmode="tel" autocomplete="tel" placeholder="(613) 555-0123"></label>
+      </div>
       <label id="radw" hidden>Delivery address<input id="rad" name="rad" autocomplete="street-address" placeholder="Street, city, postal code"></label>
       <fieldset class="rfq"><legend>Are there any changes we should know about with your medication or health?</legend>
         <div class="opts"><label class="opt"><input type="radio" name="rchg" value="No changes"><span>No changes</span></label><label class="opt"><input type="radio" name="rchg" value="Yes"><span>Yes, something has changed</span></label></div>
@@ -680,6 +686,7 @@ footer{border-top:1px solid var(--ring)}
         <div class="opts"><label class="opt"><input type="radio" name="rnt" value="Text message"><span>Text message</span></label><label class="opt"><input type="radio" name="rnt" value="Email"><span>Email</span></label><label class="opt"><input type="radio" name="rnt" value="Phone call"><span>Phone call</span></label></div>
         <label id="remw" hidden>Email address<input id="rem" name="rem" type="email" inputmode="email" autocomplete="email"></label>
       </fieldset>
+      </div></div>
       <input type="text" name="website" id="rweb" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
       <p class="err" id="rerr" role="alert" hidden></p>
       <button type="button" class="btn pri" id="go">Refill now</button>
@@ -905,6 +912,10 @@ form.addEventListener('change',function(e){
   $('rchgw').hidden=pick('rchg')!=='Yes';
   $('remw').hidden=pick('rnt')!=='Email';
   showE('')});
+var more=$('rfmore');
+function openMore(){if(more.classList.contains('rfo'))return;more.classList.add('rfo');more.removeAttribute('inert')}
+form.addEventListener('focusin',openMore);
+form.querySelectorAll('.chips button').forEach(function(b){b.addEventListener('click',openMore)});
 function digitsOnly(v){return String(v||'').replace(/\D/g,'')}
 function opts(list,sel){return list.map(function(t){return {t:t,on:sel.indexOf(t)>-1}})}
 function build(){
@@ -947,6 +958,7 @@ function finish(ref){
 }
 $('go').onclick=function(){
   if(busy)return;
+  if(!more.classList.contains('rfo')){openMore();showE('Please complete the form, then press Refill now.');return}
   var e=validate();if(e){showE(e);return}
   showE('');busy=true;var b=$('go');b.disabled=true;b.textContent='Sending...';
   var done=function(){busy=false;b.disabled=false;b.textContent='Refill now'};
