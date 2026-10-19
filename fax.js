@@ -1,6 +1,6 @@
 'use strict';
 // Fax delivery. The PDF only ever exists in memory: it is handed to the fax provider and dropped.
-// Pick a provider with FAX_PROVIDER=documo | phaxio | dryrun  (see README for the credentials each one needs).
+// Pick a provider with FAX_PROVIDER=documo | phaxio | sinch | dryrun  (see README for the credentials each one needs).
 const fs = require('fs'), path = require('path');
 const TO = (process.env.PHARMACY_FAX || '613-691-7667').replace(/\D/g, '');
 const TO_E164 = (TO.length === 10 ? '1' : '') + TO;
@@ -9,6 +9,7 @@ const provider = (process.env.FAX_PROVIDER || '').toLowerCase();
 function status() {
   if (provider === 'documo') return process.env.DOCUMO_API_KEY ? { ok: true, provider } : { ok: false, provider, why: 'DOCUMO_API_KEY is not set' };
   if (provider === 'phaxio') return process.env.PHAXIO_API_KEY && process.env.PHAXIO_API_SECRET ? { ok: true, provider } : { ok: false, provider, why: 'PHAXIO_API_KEY / PHAXIO_API_SECRET not set' };
+  if (provider === 'sinch') return process.env.SINCH_PROJECT_ID && process.env.SINCH_KEY_ID && process.env.SINCH_KEY_SECRET ? { ok: true, provider } : { ok: false, provider, why: 'SINCH_PROJECT_ID / SINCH_KEY_ID / SINCH_KEY_SECRET not set' };
   if (provider === 'dryrun') return { ok: true, provider, test: true };
   return { ok: false, provider: provider || 'none', why: 'FAX_PROVIDER is not set' };
 }
@@ -38,6 +39,14 @@ async function send(pdf, ref) {
     f.append('to', '+' + TO_E164); f.append('file', file, ref + '.pdf');
     const auth = Buffer.from(process.env.PHAXIO_API_KEY + ':' + process.env.PHAXIO_API_SECRET).toString('base64');
     await post(process.env.PHAXIO_URL || 'https://api.phaxio.com/v2.1/faxes', { method: 'POST', headers: { Authorization: 'Basic ' + auth }, body: f });
+  } else if (provider === 'sinch') {
+    // Sinch Fax API v3: POST /v3/projects/{projectId}/faxes (multipart), HTTP basic auth keyId:keySecret
+    const f = new FormData();
+    f.append('to', '+' + TO_E164); f.append('file', file, ref + '.pdf');
+    if (process.env.SINCH_FROM) f.append('from', process.env.SINCH_FROM);
+    const auth = Buffer.from(process.env.SINCH_KEY_ID + ':' + process.env.SINCH_KEY_SECRET).toString('base64');
+    const base = (process.env.SINCH_URL || 'https://fax.api.sinch.com').replace(/\/+$/, '');
+    await post(base + '/v3/projects/' + encodeURIComponent(process.env.SINCH_PROJECT_ID) + '/faxes', { method: 'POST', headers: { Authorization: 'Basic ' + auth }, body: f });
   } else if (provider === 'dryrun') {
     // Testing only. Writes the PDF to FAX_DRYRUN_DIR if (and only if) you set it.
     if (process.env.FAX_DRYRUN_DIR) { fs.mkdirSync(process.env.FAX_DRYRUN_DIR, { recursive: true }); fs.writeFileSync(path.join(process.env.FAX_DRYRUN_DIR, ref + '.pdf'), pdf); }
