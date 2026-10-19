@@ -1,6 +1,6 @@
 'use strict';
 // Fax delivery. The PDF only ever exists in memory: it is handed to the fax provider and dropped.
-// Pick a provider with FAX_PROVIDER=documo | phaxio | sinch | dryrun  (see README for the credentials each one needs).
+// Pick a provider with FAX_PROVIDER=documo | phaxio | sinch | westfax | dryrun  (see README for the credentials each one needs).
 const fs = require('fs'), path = require('path');
 const TO = (process.env.PHARMACY_FAX || '613-691-7667').replace(/\D/g, '');
 const TO_E164 = (TO.length === 10 ? '1' : '') + TO;
@@ -10,6 +10,7 @@ function status() {
   if (provider === 'documo') return process.env.DOCUMO_API_KEY ? { ok: true, provider } : { ok: false, provider, why: 'DOCUMO_API_KEY is not set' };
   if (provider === 'phaxio') return process.env.PHAXIO_API_KEY && process.env.PHAXIO_API_SECRET ? { ok: true, provider } : { ok: false, provider, why: 'PHAXIO_API_KEY / PHAXIO_API_SECRET not set' };
   if (provider === 'sinch') return process.env.SINCH_PROJECT_ID && process.env.SINCH_KEY_ID && process.env.SINCH_KEY_SECRET ? { ok: true, provider } : { ok: false, provider, why: 'SINCH_PROJECT_ID / SINCH_KEY_ID / SINCH_KEY_SECRET not set' };
+  if (provider === 'westfax') return process.env.WESTFAX_USER && process.env.WESTFAX_PASSWORD && process.env.WESTFAX_PRODUCT_ID && process.env.WESTFAX_ANI ? { ok: true, provider } : { ok: false, provider, why: 'WESTFAX_USER / WESTFAX_PASSWORD / WESTFAX_PRODUCT_ID / WESTFAX_ANI not set' };
   if (provider === 'dryrun') return { ok: true, provider, test: true };
   return { ok: false, provider: provider || 'none', why: 'FAX_PROVIDER is not set' };
 }
@@ -47,6 +48,19 @@ async function send(pdf, ref) {
     const auth = Buffer.from(process.env.SINCH_KEY_ID + ':' + process.env.SINCH_KEY_SECRET).toString('base64');
     const base = (process.env.SINCH_URL || 'https://fax.api.sinch.com').replace(/\/+$/, '');
     await post(base + '/v3/projects/' + encodeURIComponent(process.env.SINCH_PROJECT_ID) + '/faxes', { method: 'POST', headers: { Authorization: 'Basic ' + auth }, body: f });
+  } else if (provider === 'westfax') {
+    // WestFax REST: POST /REST/Fax_SendFax/json (multipart). Answers HTTP 200 with {"Success":true|false,"ErrorString":...}
+    const d = TO_E164.slice(-10), ani = String(process.env.WESTFAX_ANI).replace(/\D/g, '').slice(-10);
+    const f = new FormData();
+    f.append('Username', process.env.WESTFAX_USER); f.append('Password', process.env.WESTFAX_PASSWORD);
+    f.append('ProductId', process.env.WESTFAX_PRODUCT_ID);
+    f.append('JobName', 'Online form ' + ref); f.append('Header', 'Seaway Valley online form'); f.append('BillingCode', 'web');
+    f.append('Numbers1', d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6));
+    f.append('ANI', ani); f.append('CSID', ani); f.append('StartDate', '1/1/1999'); f.append('FaxQuality', 'Normal');
+    f.append('Files0', file, ref + '.pdf');
+    const body = await post(process.env.WESTFAX_URL || 'https://apisecure.westfax.com/REST/Fax_SendFax/json', { method: 'POST', body: f });
+    let j = null; try { j = JSON.parse(body); } catch (e) {}
+    if (!j || j.Success !== true) throw new Error('westfax refused: ' + String((j && (j.ErrorString || j.Message)) || body).slice(0, 160).replace(/\s+/g, ' '));
   } else if (provider === 'dryrun') {
     // Testing only. Writes the PDF to FAX_DRYRUN_DIR if (and only if) you set it.
     if (process.env.FAX_DRYRUN_DIR) { fs.mkdirSync(process.env.FAX_DRYRUN_DIR, { recursive: true }); fs.writeFileSync(path.join(process.env.FAX_DRYRUN_DIR, ref + '.pdf'), pdf); }
