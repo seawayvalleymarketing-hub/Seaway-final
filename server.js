@@ -6,7 +6,7 @@ const { nowLocal, validDate, validTime, addDays, longDate, clock12, TZ } = requi
 
 const PORT = +process.env.PORT || 3000;
 const PUB = __dirname; // flat layout: only the files listed in PUBLIC are ever served
-const PUBLIC = new Set(['/index.html', '/admin.html']);
+const PUBLIC = new Set(['/index.html', '/admin.html', '/site.css', '/site.js', '/services.html', '/prescriptions.html', '/vaccinations.html', '/minor-ailments.html', '/compounding.html']);
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 const MAX_BODY = 160 * 1024;
 const authState = auth.bootstrap();
@@ -188,12 +188,13 @@ function serveStatic(req, res, url) {
   let p = decodeURIComponent(url.pathname);
   if (p === '/admin' || p === '/admin/') p = '/admin.html';
   if (p === '/') p = '/index.html';
+  if (/^\/(services|prescriptions|vaccinations|minor-ailments|compounding)\/?$/.test(p)) p = p.replace(/\/$/, '') + '.html';
   if (!PUBLIC.has(p)) return send(res, 404, 'Not found');
   const full = path.join(PUB, p);
   fs.readFile(full, (err, data) => {
     if (err) return send(res, 404, 'Not found');
     const ext = path.extname(full).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600', ...(p === '/admin.html' ? { 'X-Robots-Tag': 'noindex, nofollow' } : {}) });
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': (ext === '.html' || ext === '.css' || ext === '.js') ? 'no-cache' : 'public, max-age=3600', ...(p === '/admin.html' ? { 'X-Robots-Tag': 'noindex, nofollow' } : {}) });
     res.end(data);
   });
 }
