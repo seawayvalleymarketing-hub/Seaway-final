@@ -709,3 +709,4 @@ a.card .arrow{display:inline-block;margin-top:16px;font-weight:700}
 .aboutcrew .crew svg{width:96px;height:96px}
 @media (max-width:700px){.aboutcrew .crew{grid-template-columns:1fr}}
 .menu .dw>a.dt.dl{display:inline-flex;text-decoration:none;color:inherit}
+.lg-s::before{display:none!important}.lg-s{gap:0!important}
