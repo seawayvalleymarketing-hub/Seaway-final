@@ -703,3 +703,9 @@ a.card .arrow{display:inline-block;margin-top:16px;font-weight:700}
 .dhero{margin-top:8px}
 .ready.deliv.pg{margin-top:0}
 .ready.deliv.pg h1{font-size:clamp(34px,5.4vw,60px);letter-spacing:-.05em;line-height:1.02;margin:0 0 16px;color:#fff}
+.phimg.tall{min-height:380px}
+.aboutcrew .crew{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0}
+.aboutcrew .crew figure{margin:0;background:linear-gradient(180deg,#fff,#F4F7FC);border:1px solid var(--ring);border-radius:var(--r2);box-shadow:var(--sh);padding:24px;text-align:center}
+.aboutcrew .crew svg{width:96px;height:96px}
+@media (max-width:700px){.aboutcrew .crew{grid-template-columns:1fr}}
+.menu .dw>a.dt.dl{display:inline-flex;text-decoration:none;color:inherit}
