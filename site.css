@@ -710,3 +710,23 @@ a.card .arrow{display:inline-block;margin-top:16px;font-weight:700}
 @media (max-width:700px){.aboutcrew .crew{grid-template-columns:1fr}}
 .menu .dw>a.dt.dl{display:inline-flex;text-decoration:none;color:inherit}
 .lg-s::before{display:none!important}.lg-s{gap:0!important}
+
+/* logo: Carleton Place */
+.logo .lg-c{display:none;font-family:Manrope,system-ui,sans-serif;font-weight:700;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#51617D;margin:0 0 2px 8px}
+.logo .lg-pc{display:inline-block}
+@media (max-width:640px){.lg-cp{display:none}.logo .lg{display:grid;grid-template-columns:auto 1fr;align-items:center}.logo .lg-c{display:block;grid-column:2;justify-self:start;margin:0 0 2px 7px;font-size:8px;line-height:1;white-space:nowrap}.logo .lg-pc{grid-column:1}.logo .lg-n,.logo .lg-s{grid-column:1/-1}}
+/* hero: headline <-> logo cycle */
+.hswap{display:grid}
+.hswap>*{grid-area:1/1}
+.hs-a{margin:26px 0 22px}
+.hs-a .w{display:inline-block;animation:hsA 15s cubic-bezier(.45,0,.2,1) infinite both;animation-delay:calc(var(--i)*.09s)}
+.hs-b{align-self:center;justify-self:start;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:18px 0}
+.hs-b>*{animation:hsB 15s cubic-bezier(.45,0,.2,1) infinite both;animation-delay:calc(var(--j,0)*.12s)}
+.hs-b>:nth-child(2){--j:1}.hs-b>:nth-child(3){--j:2}.hs-b>:nth-child(4){--j:3}
+.hl-pc{height:clamp(18px,3.2vw,38px);width:auto;display:block;margin-bottom:clamp(8px,1.4vw,18px)}
+.hl-n{font-family:var(--hf);font-weight:700;font-size:clamp(40px,11.5vw,104px);line-height:.96;letter-spacing:-.06em;color:#0B2447;white-space:nowrap}
+.hl-s{font-family:Manrope,system-ui,sans-serif;font-weight:700;font-size:clamp(11px,1.5vw,19px);letter-spacing:.24em;text-transform:uppercase;color:#51617D;margin-top:clamp(12px,1.8vw,22px)}
+.hl-c{font-family:var(--hf);font-weight:600;font-size:clamp(22px,3.6vw,44px);letter-spacing:-.035em;color:#1F4E9C;margin-top:clamp(8px,1.2vw,14px)}
+@keyframes hsA{0%,38%{opacity:1;transform:none;filter:blur(0)}46%{opacity:0;transform:translateY(-30px);filter:blur(12px)}47%,93%{opacity:0;transform:translateY(30px);filter:blur(12px)}100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes hsB{0%,44%{opacity:0;transform:translateY(30px) scale(.97);filter:blur(12px)}54%,88%{opacity:1;transform:none;filter:blur(0)}96%,100%{opacity:0;transform:translateY(-30px) scale(1.02);filter:blur(12px)}}
+@media (prefers-reduced-motion:reduce){.hs-b{display:none}.hs-a .w{animation:none}}
