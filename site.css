@@ -730,3 +730,6 @@ a.card .arrow{display:inline-block;margin-top:16px;font-weight:700}
 @keyframes hsA{0%,38%{opacity:1;transform:none;filter:blur(0)}46%{opacity:0;transform:translateY(-30px);filter:blur(12px)}47%,93%{opacity:0;transform:translateY(30px);filter:blur(12px)}100%{opacity:1;transform:none;filter:blur(0)}}
 @keyframes hsB{0%,44%{opacity:0;transform:translateY(30px) scale(.97);filter:blur(12px)}54%,88%{opacity:1;transform:none;filter:blur(0)}96%,100%{opacity:0;transform:translateY(-30px) scale(1.02);filter:blur(12px)}}
 @media (prefers-reduced-motion:reduce){.hs-b{display:none}.hs-a .w{animation:none}}
+/* photos placed through the admin */
+.has-img{position:relative;overflow:hidden;background:none!important}
+.has-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}

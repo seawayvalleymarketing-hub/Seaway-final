@@ -10,6 +10,7 @@ const PUBLIC = new Set(['/index.html', '/admin.html', '/site.css', '/site.js', '
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 const MAX_BODY = 160 * 1024;
 const authState = auth.bootstrap();
+const content = require('./content');
 
 const LABELS = { ailment: 'MINOR AILMENT APPOINTMENT', vaccine: 'VACCINATION APPOINTMENT' };
 const RX_LABELS = { new: 'NEW PRESCRIPTION REQUEST', refill: 'PRESCRIPTION REFILL REQUEST', transfer: 'PRESCRIPTION TRANSFER REQUEST', renewal: 'PRESCRIPTION RENEWAL REQUEST' };
@@ -26,10 +27,10 @@ function send(res, code, obj, extra) {
   res.writeHead(code, { 'Content-Type': typeof obj === 'string' ? 'text/plain; charset=utf-8' : 'application/json', 'Cache-Control': 'no-store', ...(extra || {}) });
   res.end(body);
 }
-function readBody(req) {
+function readBody(req, max) {
   return new Promise((resolve, reject) => {
     let n = 0; const parts = [];
-    req.on('data', (c) => { n += c.length; if (n > MAX_BODY) { reject(Object.assign(new Error('too large'), { code: 413 })); req.destroy(); } else parts.push(c); });
+    req.on('data', (c) => { n += c.length; if (n > (max || MAX_BODY)) { reject(Object.assign(new Error('too large'), { code: 413 })); req.destroy(); } else parts.push(c); });
     req.on('end', () => { try { resolve(JSON.parse(Buffer.concat(parts).toString() || '{}')); } catch (e) { reject(Object.assign(new Error('bad json'), { code: 400 })); } });
     req.on('error', reject);
   });
@@ -80,7 +81,7 @@ async function apiSlots(req, res) {
 
 async function apiSubmit(req, res) {
   // Spam guard: a few requests per 10 minutes and a handful per hour from one connection. Only counts, never stores form content.
-  if (auth.limited('submit10:' + ip(req), 4, 600e3) || auth.limited('submit:' + ip(req), 12, 3600e3)) return send(res, 429, { error: 'rate', message: 'You have sent several requests in a short time. Please wait a few minutes before trying again, or call the pharmacy at (613) 253-3334.' });
+  if (auth.limited('submit10:' + ip(req), 4, 600e3) || auth.limited('submit:' + ip(req), 12, 3600e3)) return send(res, 429, { error: 'rate', message: 'You have sent several requests in a short time. Please wait a few minutes before trying again, or call the pharmacy at ' + content.phone() + '.' });
   let b; try { b = await readBody(req); } catch (e) { return send(res, e.code || 400, { error: 'bad_request' }); }
   if (b.website) return send(res, 200, { ok: true, ref: 'OK' }); // honeypot: bots fill hidden fields
   const kind = b.kind;
@@ -91,7 +92,7 @@ async function apiSubmit(req, res) {
   let label = LABELS[kind];
   if (kind === 'rx') { label = RX_LABELS[b.svcId]; if (!label) return send(res, 400, { error: 'bad_request' }); }
   const st = fax.status();
-  if (!st.ok) { log({ ev: 'submit', ok: false, why: 'fax_not_configured' }); return send(res, 503, { error: 'fax_unavailable', message: 'Online requests are temporarily unavailable. Please call (613) 253-3334.' }); }
+  if (!st.ok) { log({ ev: 'submit', ok: false, why: 'fax_not_configured' }); return send(res, 503, { error: 'fax_unavailable', message: 'Online requests are temporarily unavailable. Please call ' + content.phone() + '.' }); }
 
   // Reserve the time first (synchronous check + write = no double booking), then fax.
   let booking = null;
@@ -114,7 +115,7 @@ async function apiSubmit(req, res) {
   } catch (e) {
     if (booking) store.removeBooking((x) => x.ref === ref);
     log({ ev: 'submit', ok: false, kind, ref, why: 'fax_failed', err: String(e.message).slice(0, 200) });
-    return send(res, 502, { error: 'fax_failed', message: 'We could not send your request to the pharmacy. Nothing was booked. Please try again in a minute or call (613) 253-3334.' });
+    return send(res, 502, { error: 'fax_failed', message: 'We could not send your request to the pharmacy. Nothing was booked. Please try again in a minute or call ' + content.phone() + '.' });
   }
   log({ ev: 'submit', ok: true, kind, ref });
   send(res, 200, { ok: true, ref, date: booking && booking.date, time: booking && booking.time });
@@ -173,6 +174,19 @@ async function apiAdmin(req, res, url) {
     else return send(res, 400, { error: 'bad_request' });
     store.saveConfig(); return send(res, 200, { ok: true });
   }
+  if (p === '/api/admin/content' && m === 'GET') return send(res, 200, content.adminData());
+  if (p === '/api/admin/content' && m === 'POST') {
+    let b; try { b = await readBody(req); } catch (e) { return send(res, e.code || 400, { error: 'bad_request' }); }
+    try { return send(res, 200, content.apply(b)); } catch (e) { return send(res, e.code || 400, { error: 'invalid', message: e.message }); }
+  }
+  if (p === '/api/admin/image' && m === 'POST') {
+    let b; try { b = await readBody(req, 5.2 * 1024 * 1024); } catch (e) { return send(res, e.code || 400, { error: 'bad_request', message: e.code === 413 ? 'That photo is too large. Try a smaller one.' : undefined }); }
+    try {
+      if (b.remove) return send(res, 200, content.clearImage(String(b.key || '')));
+      if (b.data === undefined) return send(res, 200, content.setAlt(String(b.key || ''), b.alt));
+      return send(res, 200, content.setImage(String(b.key || ''), b.data, b.alt));
+    } catch (e) { return send(res, e.code || 400, { error: 'invalid', message: e.message }); }
+  }
   if (p === '/api/admin/password' && m === 'POST') {
     let b; try { b = await readBody(req); } catch (e) { return send(res, 400, { error: 'bad_request' }); }
     if (auth.limited('pw:' + ip(req), 6, 15 * 60e3)) return send(res, 429, { error: 'rate' });
@@ -189,11 +203,17 @@ function serveStatic(req, res, url) {
   if (p === '/admin' || p === '/admin/') p = '/admin.html';
   if (p === '/') p = '/index.html';
   if (/^\/(services|prescriptions|vaccinations|minor-ailments|compounding|free-delivery|about)\/?$/.test(p)) p = p.replace(/\/$/, '') + '.html';
+  if (p.startsWith('/uploads/')) {
+    const u = content.upload(p.slice(9)); if (!u) return send(res, 404, 'Not found');
+    res.writeHead(200, { 'Content-Type': u.type, 'Cache-Control': 'public, max-age=31536000, immutable' }); return res.end(u.data);
+  }
   if (!PUBLIC.has(p)) return send(res, 404, 'Not found');
   const full = path.join(PUB, p);
   fs.readFile(full, (err, data) => {
     if (err) return send(res, 404, 'Not found');
     const ext = path.extname(full).toLowerCase();
+    if (ext === '.html' && p !== '/admin.html') data = Buffer.from(content.render(data.toString('utf8')), 'utf8');
+    else if (p === '/site.js') data = Buffer.from(content.renderJs(data.toString('utf8')), 'utf8');
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': (ext === '.html' || ext === '.css' || ext === '.js') ? 'no-cache' : 'public, max-age=3600', ...(p === '/admin.html' ? { 'X-Robots-Tag': 'noindex, nofollow' } : {}) });
     res.end(data);
   });

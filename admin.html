@@ -95,6 +95,24 @@ td.r{text-align:right;padding-right:0}
 .rad label{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:11px 16px;cursor:pointer;font-weight:700;font-size:15px}
 .rad label:has(input:checked){border-color:var(--navy);background:var(--soft)}
 .rad input{accent-color:var(--navy);width:20px;height:20px}
+
+textarea{font:inherit;width:100%;min-height:92px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);resize:vertical;line-height:1.5}
+textarea:focus-visible{outline:3px solid #6EA8FF;outline-offset:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.chips button{min-height:40px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:none;font-weight:700;font-size:14px;cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.cf{margin-bottom:16px}.cf .lb{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-weight:700;font-size:14px;margin-bottom:6px}
+.cf .lb small{font-weight:500;color:var(--mute)}
+.cf .ed{font-size:12px;font-weight:700;color:var(--green);margin-left:8px}
+.lk{background:none;border:0;padding:0;color:var(--mute);text-decoration:underline;font-size:13px;cursor:pointer}
+.ph{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.ph:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.ph .th{aspect-ratio:4/3;border-radius:14px;background:var(--sky);border:1.5px dashed var(--line);overflow:hidden;display:grid;place-items:center;color:var(--mute);font-size:12px;text-align:center}
+.ph .th img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.rvi{border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;background:var(--soft)}
+.rvi .top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px;font-weight:700}
+@media (max-width:560px){.ph{grid-template-columns:90px 1fr}}
 .row2{display:grid;gap:0 14px}
 @media (min-width:600px){.row2{grid-template-columns:1fr 1fr}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}}
 .tag{display:inline-block;border-radius:999px;padding:3px 12px;font-size:13px;font-weight:700;border:1.5px solid var(--line)}
@@ -136,7 +154,7 @@ function login(note){
 
 /* ---------------- shell ---------------- */
 function shell(){
-  var tabs=[['bookings','Appointments'],['weekly','Weekly hours'],['dates','Days off & extra hours'],['settings','Settings']];
+  var tabs=[['bookings','Appointments'],['weekly','Weekly hours'],['dates','Days off & extra hours'],['content','Website'],['settings','Settings']];
   app.innerHTML='<header class="top"><div class="wrap"><div class="brand">Seaway Valley<small>Appointment dashboard</small></div><button class="btn sec sm" id="out">Sign out</button></div></header>'
     +'<div class="wrap"><nav class="tabs" role="tablist">'+tabs.map(function(t){return '<button role="tab" data-tab="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</nav>'
     +'<main><div id="toast" class="msg" role="status" hidden></div>'+(S.status&&!S.status.fax.ok?'<p class="msg bad">Faxing is not set up yet ('+esc(S.status.fax.why||'')+'). Patients cannot submit requests until it is. See the README.</p>':'')
@@ -146,9 +164,10 @@ function shell(){
     S.tab=b.getAttribute('data-tab');shell();view();
   }});
 }
-function view(){var v=$('#view');({bookings:vBookings,weekly:vWeekly,dates:vDates,settings:vSettings})[S.tab](v);saveBar()}
+function view(){var v=$('#view');({bookings:vBookings,weekly:vWeekly,dates:vDates,content:vContent,settings:vSettings})[S.tab](v);saveBar()}
 function saveBar(){
   var sb=$('#sb');if(!sb)return;
+  if(S.tab==='content'){return cBar(sb)}
   if(!S.dirty){sb.innerHTML='';return}
   sb.innerHTML='<div class="savebar"><div class="wrap"><p>You have unsaved changes.</p><div style="display:flex;gap:10px"><button class="btn sec" id="dis">Discard</button><button class="btn" id="sv">Save changes</button></div></div></div>';
   $('#dis').onclick=function(){S.draft=null;S.dirty=false;view()};
@@ -323,6 +342,97 @@ function vSettings(v){
   $('#wd').oninput=function(){d.windowDays=Math.max(1,Math.min(120,+this.value||1));touch()};
   $('#mn').oninput=function(){d.minNoticeHours=Math.max(0,Math.min(168,+this.value||0));touch()};
   $('#pwf').onsubmit=function(e){e.preventDefault();api('POST','/api/admin/password',{current:$('#p0').value,next:$('#p1').value}).then(function(){$('#p0').value='';$('#p1').value='';flash('ok','Password changed.')},fail)};
+}
+
+/* ---------------- website content ---------------- */
+var C={data:null,page:'Home',vals:{},site:{},rev:null,busy:false};
+var PAGEURL={'Home':'/','Services':'/services','Prescriptions':'/prescriptions','Vaccinations':'/vaccinations','Minor ailments':'/minor-ailments','Compounding':'/compounding','Free delivery':'/free-delivery','About':'/about'};
+function cDirty(){return Object.keys(C.vals).length>0||Object.keys(C.site).length>0||C.rev!==null}
+function cBar(sb){
+  if(!cDirty()){sb.innerHTML='';return}
+  sb.innerHTML='<div class="savebar"><div class="wrap"><p>You have unsaved changes to the website.</p><div style="display:flex;gap:10px"><button class="btn sec" id="cdis">Discard</button><button class="btn" id="csv">Save changes</button></div></div></div>';
+  $('#cdis').onclick=function(){C.vals={};C.site={};C.rev=null;view()};
+  $('#csv').onclick=cSave;
+}
+function cSave(){
+  var b=$('#csv');if(b){b.disabled=true;b.textContent='Saving...'}
+  var body={values:C.vals,site:C.site};if(C.rev!==null)body.reviews=C.rev==='reset'?null:C.rev;
+  api('POST','/api/admin/content',body).then(function(d){C.data=d;C.vals={};C.site={};C.rev=null;flash('ok','Saved. Your changes are live on the website now.');view()},function(e){if(b){b.disabled=false;b.textContent='Save changes'}fail(e)});
+}
+function cVal(f){return Object.prototype.hasOwnProperty.call(C.vals,f.key)?C.vals[f.key]:(f.value!=null?f.value:f.def)}
+function cEdited(f){return Object.prototype.hasOwnProperty.call(C.vals,f.key)?C.vals[f.key]!==null:f.value!=null}
+function vContent(v){
+  if(!C.data){v.innerHTML='<p class="note">Loading...</p>';api('GET','/api/admin/content').then(function(d){C.data=d;view()},fail);return}
+  var d=C.data,pages=['__site','__reviews'].concat(d.pages);
+  var h='<div class="card"><h2>Website</h2><p class="sub">Change the words and photos on your website. Pick a page, edit, then press Save. Layouts and buttons can\'t be broken from here.</p>'
+   +(d.storage.temp?'<p class="msg warn">Edits are being saved to a temporary folder and will be lost when the server restarts. A persistent disk is needed before relying on this.</p>':'<p class="note" style="margin:0">Edits are saved on the server and stay after restarts only when it has a persistent disk.</p>')+'</div>';
+  h+='<div class="chips" role="group" aria-label="Choose what to edit">'+pages.map(function(p){var n=p==='__site'?'Contact details':p==='__reviews'?'Customer reviews':p;return '<button type="button" data-cp="'+esc(p)+'" aria-pressed="'+(C.page===p)+'">'+esc(n)+'</button>'}).join('')+'</div><div id="cv"></div>';
+  v.innerHTML=h;
+  v.querySelectorAll('[data-cp]').forEach(function(b){b.onclick=function(){C.page=b.getAttribute('data-cp');view()}});
+  var cv=$('#cv');
+  if(C.page==='__site')cSite(cv);else if(C.page==='__reviews')cReviews(cv);else cPage(cv);
+}
+function cSite(cv){
+  cv.innerHTML='<div class="card"><h2>Contact details</h2><p class="sub">These appear across the whole website.</p>'+C.data.site.map(function(g){
+    var cur=Object.prototype.hasOwnProperty.call(C.site,g.key)?(C.site[g.key]||g.def):(g.value||g.def);
+    return '<div class="cf"><label class="lb" for="s_'+g.key.replace('.','_')+'">'+esc(g.label)+(g.value?'<span class="ed">Edited</span>':'')+'</label><input type="text" id="s_'+g.key.replace('.','_')+'" data-sk="'+g.key+'" value="'+esc(cur)+'" maxlength="60"><p class="note" style="margin:4px 0 0">'+esc(g.hint)+(g.value?' <button type="button" class="lk" data-rs="'+g.key+'">Reset to original</button>':'')+'</p></div>'}).join('')
+   +'<p class="note">Opening hours and the address are on the Home page, under "We\'d Love to Hear from You".</p></div>';
+  cv.querySelectorAll('[data-sk]').forEach(function(i){i.oninput=function(){C.site[i.getAttribute('data-sk')]=i.value;saveBar()}});
+  cv.querySelectorAll('[data-rs]').forEach(function(b){b.onclick=function(){C.site[b.getAttribute('data-rs')]=null;saveBar();b.parentNode.parentNode.querySelector('input').value=C.data.site.filter(function(g){return g.key===b.getAttribute('data-rs')})[0].def}});
+}
+function cReviews(cv){
+  var list=C.rev&&C.rev!=='reset'?C.rev:C.data.reviews;
+  cv.innerHTML='<div class="card"><h2>Customer reviews</h2><p class="sub">The first review is shown large. The rest scroll underneath it.</p><div id="rl"></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec" id="ra">Add a review</button>'+(C.data.reviewsEdited||C.rev?'<button class="btn sec" id="rr">Restore the original reviews</button>':'')+'</div></div>';
+  function touchR(){C.rev=list;saveBar()}
+  function draw(){
+    $('#rl').innerHTML=list.map(function(r,i){return '<div class="rvi" data-i="'+i+'"><div class="top"><span>Review '+(i+1)+(i===0?' (shown large)':'')+'</span><span><button type="button" class="lk" data-a="up"'+(i===0?' disabled':'')+'>Move up</button> &nbsp; <button type="button" class="lk" data-a="dn"'+(i===list.length-1?' disabled':'')+'>Move down</button> &nbsp; <button type="button" class="lk" data-a="rm">Remove</button></span></div><div class="row2"><label class="f">Name<input type="text" data-f="name" value="'+esc(r.name)+'" maxlength="80"></label><label class="f">Details (for example: 3 reviews, 2 years ago)<input type="text" data-f="meta" value="'+esc(r.meta)+'" maxlength="80"></label></div><label class="f">Review<textarea data-f="text" maxlength="2500">'+esc(r.text)+'</textarea></label></div>'}).join('')||'<p class="note">No reviews yet.</p>';
+    $('#rl').querySelectorAll('.rvi').forEach(function(box){var i=+box.getAttribute('data-i');
+      box.querySelectorAll('[data-f]').forEach(function(inp){inp.oninput=function(){list=list.slice();list[i]=Object.assign({},list[i]);list[i][inp.getAttribute('data-f')]=inp.value;touchR()}});
+      box.querySelectorAll('[data-a]').forEach(function(b){b.onclick=function(){var a=b.getAttribute('data-a');list=list.slice();
+        if(a==='rm')list.splice(i,1);else{var j=a==='up'?i-1:i+1;var t=list[i];list[i]=list[j];list[j]=t}touchR();draw()}});
+    });
+  }
+  draw();
+  $('#ra').onclick=function(){list=list.concat([{name:'',meta:'',text:''}]);touchR();draw();var t=$('#rl').querySelectorAll('.rvi');t[t.length-1].querySelector('input').focus()};
+  var rr=$('#rr');if(rr)rr.onclick=function(){C.rev='reset';saveBar();flash('ok','Press Save changes to restore the original reviews.')};
+}
+function shrink(file,cb,eb){
+  var fr=new FileReader();
+  fr.onerror=eb;
+  fr.onload=function(){var im=new Image();
+    im.onload=function(){var m=1600,w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,m/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+      var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',.86).split(',')[1])};
+    im.onerror=eb;im.src=fr.result};
+  fr.readAsDataURL(file);
+}
+function cPage(cv){
+  var d=C.data,imgs=d.images.filter(function(i){return i.page===C.page}),fs=d.fields.filter(function(f){return f.page===C.page});
+  var h='<p style="margin:0 0 14px"><a class="note" href="'+PAGEURL[C.page]+'" target="_blank" rel="noopener">Open this page in a new tab</a></p>';
+  if(imgs.length){
+    h+='<div class="card"><h2>Photos</h2><p class="sub">Choose a photo for each blank spot. It is saved straight away. Large photos are shrunk automatically.</p>'+imgs.map(function(i,n){
+      return '<div class="ph" data-k="'+i.key+'"><div class="th">'+(i.file?'<img src="/uploads/'+i.file+'" alt="">':'No photo yet')+'</div><div><b>'+esc(i.label)+'</b><div class="note">'+esc(i.section)+'</div>'
+       +(i.file?'<label class="f" style="margin:8px 0 0">Describe the photo (for screen readers)<input type="text" data-alt maxlength="160" value="'+esc(i.alt||'')+'"></label>':'')
+       +'<div class="acts"><button type="button" class="btn sm" data-pick>'+(i.file?'Replace photo':'Choose photo')+'</button>'+(i.file?'<button type="button" class="btn sec sm" data-rm>Remove photo</button>':'')+'</div><input type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div>'}).join('')+'</div>';
+  }
+  var groups=[],gi={};fs.forEach(function(f){if(!(f.section in gi)){gi[f.section]=groups.length;groups.push({s:f.section,f:[]})}groups[gi[f.section]].f.push(f)});
+  groups.forEach(function(g){
+    h+='<div class="card"><h2>'+esc(g.s)+'</h2>'+g.f.map(function(f){var id='f_'+f.key.replace(/[^\w]/g,'_'),val=cVal(f),kind=f.label.split(':')[0];
+      return '<div class="cf"><label class="lb" for="'+id+'"><span>'+esc(kind)+(cEdited(f)?'<span class="ed">Edited</span>':'')+'</span>'+(cEdited(f)?'<button type="button" class="lk" data-rs="'+f.key+'">Reset to original</button>':'')+'</label>'
+       +(f.type==='area'?'<textarea id="'+id+'" data-fk="'+f.key+'" maxlength="2000">'+esc(val)+'</textarea>':'<input type="text" id="'+id+'" data-fk="'+f.key+'" maxlength="300" value="'+esc(val)+'">')+'</div>'}).join('')+'</div>';
+  });
+  if(!imgs.length&&!groups.length)h+='<p class="note">Nothing on this page can be edited.</p>';
+  cv.innerHTML=h;
+  cv.querySelectorAll('[data-fk]').forEach(function(i){i.oninput=function(){C.vals[i.getAttribute('data-fk')]=i.value;saveBar()}});
+  cv.querySelectorAll('[data-rs]').forEach(function(b){b.onclick=function(){C.vals[b.getAttribute('data-rs')]=null;saveBar();var f=d.fields.filter(function(x){return x.key===b.getAttribute('data-rs')})[0];var inp=cv.querySelector('[data-fk="'+f.key+'"]');inp.value=f.def;b.remove()}});
+  cv.querySelectorAll('.ph').forEach(function(box){var k=box.getAttribute('data-k'),fi=box.querySelector('input[type=file]');
+    box.querySelector('[data-pick]').onclick=function(){fi.click()};
+    fi.onchange=function(){var f=fi.files[0];if(!f)return;if(!/^image\//.test(f.type)){flash('bad','Please choose a photo.');return}
+      var alt=box.querySelector('[data-alt]');var b=box.querySelector('[data-pick]');b.disabled=true;b.textContent='Uploading...';
+      shrink(f,function(b64){api('POST','/api/admin/image',{key:k,data:b64,alt:alt?alt.value:''}).then(function(dd){C.data=dd;flash('ok','Photo saved and live.');view()},function(e){b.disabled=false;b.textContent='Choose photo';fail(e)})},function(){b.disabled=false;b.textContent='Choose photo';flash('bad','That file could not be read as a photo.')});};
+    var rm=box.querySelector('[data-rm]');if(rm)rm.onclick=function(){if(!confirm('Remove this photo?'))return;api('POST','/api/admin/image',{key:k,remove:true}).then(function(dd){C.data=dd;flash('ok','Photo removed.');view()},fail)};
+    var al=box.querySelector('[data-alt]');if(al)al.onchange=function(){api('POST','/api/admin/image',{key:k,alt:al.value}).then(function(dd){C.data=dd;flash('ok','Saved.')},fail)};
+  });
 }
 
 function start(){
