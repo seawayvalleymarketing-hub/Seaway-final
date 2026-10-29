@@ -212,7 +212,7 @@ function serveStatic(req, res, url) {
   fs.readFile(full, (err, data) => {
     if (err) return send(res, 404, 'Not found');
     const ext = path.extname(full).toLowerCase();
-    if (ext === '.html' && p !== '/admin.html') data = Buffer.from(content.render(data.toString('utf8')), 'utf8');
+    if (ext === '.html' && p !== '/admin.html') data = Buffer.from(content.render(data.toString('utf8'), new URL(req.url, 'http://x').searchParams.get('hl')), 'utf8');
     else if (p === '/site.js') data = Buffer.from(content.renderJs(data.toString('utf8')), 'utf8');
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': (ext === '.html' || ext === '.css' || ext === '.js') ? 'no-cache' : 'public, max-age=3600', ...(p === '/admin.html' ? { 'X-Robots-Tag': 'noindex, nofollow' } : {}) });
     res.end(data);

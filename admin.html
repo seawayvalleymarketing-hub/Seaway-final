@@ -104,6 +104,7 @@ textarea:focus-visible{outline:3px solid #6EA8FF;outline-offset:2px}
 .cf{margin-bottom:16px}.cf .lb{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-weight:700;font-size:14px;margin-bottom:6px}
 .cf .lb small{font-weight:500;color:var(--mute)}
 .cf .ed{font-size:12px;font-weight:700;color:var(--green);margin-left:8px}
+.cf .cx{display:block;font-weight:500;font-size:12.5px;color:var(--mute);margin-top:1px}.cf .lb>span:first-child{min-width:0}
 .lk{background:none;border:0;padding:0;color:var(--mute);text-decoration:underline;font-size:13px;cursor:pointer}
 .ph{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
 .ph:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
@@ -411,14 +412,14 @@ function cPage(cv){
   var h='<p style="margin:0 0 14px"><a class="note" href="'+PAGEURL[C.page]+'" target="_blank" rel="noopener">Open this page in a new tab</a></p>';
   if(imgs.length){
     h+='<div class="card"><h2>Photos</h2><p class="sub">Choose a photo for each blank spot. It is saved straight away. Large photos are shrunk automatically.</p>'+imgs.map(function(i,n){
-      return '<div class="ph" data-k="'+i.key+'"><div class="th">'+(i.file?'<img src="/uploads/'+i.file+'" alt="">':'No photo yet')+'</div><div><b>'+esc(i.label)+'</b><div class="note">'+esc(i.section)+'</div>'
+      return '<div class="ph" data-k="'+i.key+'"><div class="th">'+(i.file?'<img src="/uploads/'+i.file+'" alt="">':'No photo yet')+'</div><div><b>'+esc(i.label)+'</b><div class="note">In the section &ldquo;'+esc(i.section)+'&rdquo; &nbsp;<a class="lk" href="'+PAGEURL[C.page]+'?hl='+encodeURIComponent(i.key)+'" target="_blank" rel="noopener">Show on page</a></div>'
        +(i.file?'<label class="f" style="margin:8px 0 0">Describe the photo (for screen readers)<input type="text" data-alt maxlength="160" value="'+esc(i.alt||'')+'"></label>':'')
        +'<div class="acts"><button type="button" class="btn sm" data-pick>'+(i.file?'Replace photo':'Choose photo')+'</button>'+(i.file?'<button type="button" class="btn sec sm" data-rm>Remove photo</button>':'')+'</div><input type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div>'}).join('')+'</div>';
   }
   var groups=[],gi={};fs.forEach(function(f){if(!(f.section in gi)){gi[f.section]=groups.length;groups.push({s:f.section,f:[]})}groups[gi[f.section]].f.push(f)});
   groups.forEach(function(g){
-    h+='<div class="card"><h2>'+esc(g.s)+'</h2>'+g.f.map(function(f){var id='f_'+f.key.replace(/[^\w]/g,'_'),val=cVal(f),kind=f.label.split(':')[0];
-      return '<div class="cf"><label class="lb" for="'+id+'"><span>'+esc(kind)+(cEdited(f)?'<span class="ed">Edited</span>':'')+'</span>'+(cEdited(f)?'<button type="button" class="lk" data-rs="'+f.key+'">Reset to original</button>':'')+'</label>'
+    h+='<div class="card"><h2>'+esc(g.s)+'</h2>'+g.f.map(function(f){var id='f_'+f.key.replace(/[^\w]/g,'_'),val=cVal(f),lp=f.label.split('::'),kind=lp[0];
+      return '<div class="cf"><label class="lb" for="'+id+'"><span>'+esc(kind)+(lp[1]?' <span class="cx">'+esc(lp[1])+'</span>':'')+(cEdited(f)?'<span class="ed">Edited</span>':'')+'</span> <span><a class="lk" href="'+PAGEURL[C.page]+'?hl='+encodeURIComponent(f.key)+'" target="_blank" rel="noopener">Show on page</a>'+(cEdited(f)?' &nbsp; <button type="button" class="lk" data-rs="'+f.key+'">Reset to original</button>':'')+'</span></label>'+'</label>'
        +(f.type==='area'?'<textarea id="'+id+'" data-fk="'+f.key+'" maxlength="2000">'+esc(val)+'</textarea>':'<input type="text" id="'+id+'" data-fk="'+f.key+'" maxlength="300" value="'+esc(val)+'">')+'</div>'}).join('')+'</div>';
   });
   if(!imgs.length&&!groups.length)h+='<p class="note">Nothing on this page can be edited.</p>';

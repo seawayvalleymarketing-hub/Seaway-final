@@ -75,14 +75,17 @@ function globals(s, isJs) {
   if (em && !isJs) s = s.split('Seaway.carletonplace@gmail.com').join(em);
   return s;
 }
-function render(html) {
+function render(html, hl) {
   const star = scan().star;
-  html = html.replace(ED, (m, key, type, pg, sec, label, def) => (Object.prototype.hasOwnProperty.call(C.values, key) ? (type === 'area' ? escArea(C.values[key]) : esc(C.values[key])) : def));
+  hl = /^[\w.-]{1,80}$/.test(hl || '') ? hl : '';
+  html = html.replace(ED, (m, key, type, pg, sec, label, def) => { const v = Object.prototype.hasOwnProperty.call(C.values, key) ? (type === 'area' ? escArea(C.values[key]) : esc(C.values[key])) : def; return key === hl ? '<mark id="ed-hl" class="ed-hl">' + v + '</mark>' : v; });
   html = html.replace(IMG, (m, key, pg, sec, label, tag, cls, orig) => {
-    const im = C.images[key]; if (!im) return orig;
-    return '<' + tag + ' class="' + cls + ' has-img"><img src="/uploads/' + im.file + '" alt="' + esc(im.alt || '') + '" loading="lazy" decoding="async"></' + tag + '>';
+    const im = C.images[key];
+    if (!im) return key === hl ? orig.replace(/^<(\w+)/, '<$1 id="ed-hl" data-hl="1"') : orig;
+    return '<' + tag + (key === hl ? ' id="ed-hl" data-hl="1"' : '') + ' class="' + cls + ' has-img"><img src="/uploads/' + im.file + '" alt="' + esc(im.alt || '') + '" loading="lazy" decoding="async"></' + tag + '>';
   });
   html = html.replace(LIST, (m, kind, orig) => (C.reviews ? renderReviews(kind, C.reviews, star) : orig));
+  if (hl) html = html.replace('</body>', '<style>mark.ed-hl{background:#FFE680;color:inherit;outline:3px solid #E10600;outline-offset:3px;border-radius:3px}[data-hl]{outline:4px solid #E10600!important;outline-offset:-4px}.ed-bn{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99999;background:#12263F;color:#fff;font:600 14px/1.3 system-ui,sans-serif;padding:10px 16px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.3)}</style><script>(function(){var e=document.getElementById("ed-hl");if(!e)return;var b=document.createElement("div");b.className="ed-bn";b.textContent="This is the item you are editing";document.body.appendChild(b);setTimeout(function(){e.scrollIntoView({block:"center"})},350)})()</script></body>');
   return globals(html, false);
 }
 const renderJs = (js) => globals(js, true);
@@ -110,7 +113,7 @@ function apply(b) {
     if (typeof v !== 'string') throw bad('Invalid value.');
     let t = v.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/\r\n?/g, '\n').trim();
     if (f.type === 'text') t = t.replace(/\s*\n\s*/g, ' ');
-    if (t.length > (f.type === 'area' ? 2000 : 300)) throw bad('"' + f.label.split(':')[0] + '" is too long.');
+    if (t.length > (f.type === 'area' ? 2000 : 300)) throw bad('"' + f.label.split('::')[0] + '" is too long.');
     C.values[k] = t;
   }
   const site = b.site && typeof b.site === 'object' ? b.site : {};
