@@ -6,7 +6,7 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const store = require('./store');
 
 const PAGES = [['Home', 'index.html'], ['Services', 'services.html'], ['Prescriptions', 'prescriptions.html'], ['Vaccinations', 'vaccinations.html'],
-  ['Minor ailments', 'minor-ailments.html'], ['Compounding', 'compounding.html'], ['Free delivery', 'free-delivery.html'], ['About', 'about.html']];
+  ['Minor ailments', 'minor-ailments.html'], ['Compounding', 'compounding.html'], ['Free delivery', 'free-delivery.html'], ['Weekly flyer', 'flyer.html'], ['About', 'about.html']];
 const ED = /<!--ed:([\w.\-]+)\|(text|area)\|([^|]*)\|([^|]*)\|([^>]*?)-->([\s\S]*?)<!--\/ed-->/g;
 const IMG = /<!--img:([\w.\-]+)\|([^|]*)\|([^|]*)\|([^|]*)\|(\w+)\|([^>]*?)-->([\s\S]*?)<!--\/img-->/g;
 const LIST = /<!--list:(rv-feat|rv-cards)-->([\s\S]*?)<!--\/list-->/g;

@@ -6,7 +6,7 @@ const { nowLocal, validDate, validTime, addDays, longDate, clock12, TZ } = requi
 
 const PORT = +process.env.PORT || 3000;
 const PUB = __dirname; // flat layout: only the files listed in PUBLIC are ever served
-const PUBLIC = new Set(['/index.html', '/admin.html', '/site.css', '/site.js', '/services.html', '/prescriptions.html', '/vaccinations.html', '/minor-ailments.html', '/compounding.html', '/free-delivery.html', '/about.html']);
+const PUBLIC = new Set(['/index.html', '/admin.html', '/site.css', '/site.js', '/services.html', '/prescriptions.html', '/vaccinations.html', '/minor-ailments.html', '/compounding.html', '/free-delivery.html', '/flyer.html', '/about.html']);
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 const MAX_BODY = 160 * 1024;
 const authState = auth.bootstrap();
@@ -205,7 +205,7 @@ function serveStatic(req, res, url) {
   let p = decodeURIComponent(url.pathname);
   if (p === '/admin' || p === '/admin/') p = '/admin.html';
   if (p === '/') p = '/index.html';
-  if (/^\/(services|prescriptions|vaccinations|minor-ailments|compounding|free-delivery|about)\/?$/.test(p)) p = p.replace(/\/$/, '') + '.html';
+  if (/^\/(services|prescriptions|vaccinations|minor-ailments|compounding|free-delivery|flyer|about)\/?$/.test(p)) p = p.replace(/\/$/, '') + '.html';
   if (p.startsWith('/uploads/')) {
     const u = content.upload(p.slice(9)); if (!u) return send(res, 404, 'Not found');
     res.writeHead(200, { 'Content-Type': u.type, 'Cache-Control': 'public, max-age=31536000, immutable' }); return res.end(u.data);
@@ -224,7 +224,7 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer(async (req, res) => {
   for (const [k, v] of Object.entries(SEC)) res.setHeader(k, v);
-  { let pp = '/'; try { pp = new URL(req.url, 'http://x').pathname } catch (e) {} if (pp === '/' || pp === '/index.html') res.setHeader('Content-Security-Policy', SEC_HOME); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin') }
+  { let pp = '/'; try { pp = new URL(req.url, 'http://x').pathname } catch (e) {} if (pp === '/flyer' || pp === '/flyer.html') res.setHeader('Content-Security-Policy', SEC_HOME); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin') }
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/slots' && req.method === 'GET') return await apiSlots(req, res);

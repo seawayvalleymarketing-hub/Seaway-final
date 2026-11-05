@@ -347,7 +347,7 @@ function vSettings(v){
 
 /* ---------------- website content ---------------- */
 var C={data:null,page:'Home',vals:{},site:{},rev:null,busy:false};
-var PAGEURL={'Home':'/','Services':'/services','Prescriptions':'/prescriptions','Vaccinations':'/vaccinations','Minor ailments':'/minor-ailments','Compounding':'/compounding','Free delivery':'/free-delivery','About':'/about'};
+var PAGEURL={'Home':'/','Services':'/services','Prescriptions':'/prescriptions','Vaccinations':'/vaccinations','Minor ailments':'/minor-ailments','Compounding':'/compounding','Free delivery':'/free-delivery','Weekly flyer':'/flyer','About':'/about'};
 function cDirty(){return Object.keys(C.vals).length>0||Object.keys(C.site).length>0||C.rev!==null}
 function cBar(sb){
   if(!cDirty()){sb.innerHTML='';return}
