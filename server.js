@@ -224,7 +224,7 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer(async (req, res) => {
   for (const [k, v] of Object.entries(SEC)) res.setHeader(k, v);
-  { let pp = '/'; try { pp = new URL(req.url, 'http://x').pathname } catch (e) {} if (pp === '/' || pp === '/index.html') res.setHeader('Content-Security-Policy', SEC_HOME) }
+  { let pp = '/'; try { pp = new URL(req.url, 'http://x').pathname } catch (e) {} if (pp === '/' || pp === '/index.html') res.setHeader('Content-Security-Policy', SEC_HOME); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin') }
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/slots' && req.method === 'GET') return await apiSlots(req, res);
