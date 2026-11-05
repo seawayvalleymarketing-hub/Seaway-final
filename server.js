@@ -51,7 +51,7 @@ const SEC = {
 };
 
 // The home page hosts the PharmaChoice flyer (it loads the Flipp flyer library), so only that page allows outside scripts, images and frames.
-const SEC_HOME = SEC['Content-Security-Policy'].replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https:").replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https:").replace("font-src 'self' data:", "font-src 'self' data: https:").replace("img-src 'self' data:", "img-src 'self' data: https:").replace("connect-src 'self'", "connect-src 'self' https:").replace("default-src 'self'", "default-src 'self'; frame-src https:");
+const SEC_HOME = SEC['Content-Security-Policy'].replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https: blob:").replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https:").replace("font-src 'self' data:", "font-src 'self' data: https:").replace("img-src 'self' data:", "img-src 'self' data: https: blob:").replace("connect-src 'self'", "connect-src 'self' https: blob:").replace("default-src 'self'", "default-src 'self'; worker-src 'self' blob:; frame-src https: blob:");
 
 // ---------- fax model validation ----------
 const clip = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').slice(0, n);
