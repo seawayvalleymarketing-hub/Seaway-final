@@ -47,8 +47,11 @@ const isAdmin = (req) => !!auth.readToken(cookies(req).sv_admin);
 const SEC = {
   'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://pcc-flyer-embed.pharmachoice-canada.workers.dev; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://pcc-flyer-embed.pharmachoice-canada.workers.dev; frame-src https:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 };
+
+// The home page hosts the PharmaChoice flyer (it loads the Flipp flyer library), so only that page allows outside scripts, images and frames.
+const SEC_HOME = SEC['Content-Security-Policy'].replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https:").replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https:").replace("font-src 'self' data:", "font-src 'self' data: https:").replace("img-src 'self' data:", "img-src 'self' data: https:").replace("connect-src 'self'", "connect-src 'self' https:").replace("default-src 'self'", "default-src 'self'; frame-src https:");
 
 // ---------- fax model validation ----------
 const clip = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').slice(0, n);
@@ -221,6 +224,7 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer(async (req, res) => {
   for (const [k, v] of Object.entries(SEC)) res.setHeader(k, v);
+  { let pp = '/'; try { pp = new URL(req.url, 'http://x').pathname } catch (e) {} if (pp === '/' || pp === '/index.html') res.setHeader('Content-Security-Policy', SEC_HOME) }
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/slots' && req.method === 'GET') return await apiSlots(req, res);
