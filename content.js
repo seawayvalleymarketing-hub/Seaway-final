@@ -70,7 +70,7 @@ function renderReviews(kind, list, star) {
   }
   return list.slice(1).map((r) => '<article class="rv-card"><div class="rv-top"><span class="rv-av" aria-hidden="true">' + initial(r.name) + '</span><div class="rv-who"><b>' + esc(r.name) + '</b><small>' + esc(r.meta) + '</small></div>' + stars + '</div><p>' + escArea(r.text) + '</p></article>').join('');
 }
-const FLYER_DEFAULT = process.env.FLYER_STORE || '';
+const FLYER_DEFAULT = process.env.FLYER_STORE || '5804';
 function globals(s, isJs) {
   if (!isJs) { const fl = C.site['site.flyer'] || FLYER_DEFAULT; s = s.replace(FLYER, (m, inner) => (/^\d{1,8}$/.test(fl) ? inner.split('__FLYER__').join(fl) : '')); }
   const ph = C.site['site.phone'], fx = C.site['site.fax'], em = C.site['site.email'];
