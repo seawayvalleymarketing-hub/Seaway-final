@@ -14,7 +14,9 @@ const GLOBALS = [
   { key: 'site.phone', label: 'Phone number', def: '(613) 253-3334', hint: 'Shown in the header, footer, contact section and buttons. Phone links update too.' },
   { key: 'site.fax', label: 'Fax number shown on the website', def: '(613) 691-7667', hint: 'Only changes what visitors see. The fax that receives requests is set on the server.' },
   { key: 'site.email', label: 'Email address', def: 'Seaway.carletonplace@gmail.com', hint: 'Shown in the contact section. Email links update too.' },
+  { key: 'site.flyer', label: 'Weekly flyer store number', def: '', hint: 'Your PharmaChoice store number, digits only. Leave empty to hide the flyer section on the home page.' },
 ];
+const FLYER = /<!--flyer-->([\s\S]*?)<!--\/flyer-->/g;
 const UP = path.join(store.DIR, 'uploads');
 try { fs.mkdirSync(UP, { recursive: true, mode: 0o700 }); } catch (e) { /* uploads then unavailable */ }
 
@@ -68,7 +70,9 @@ function renderReviews(kind, list, star) {
   }
   return list.slice(1).map((r) => '<article class="rv-card"><div class="rv-top"><span class="rv-av" aria-hidden="true">' + initial(r.name) + '</span><div class="rv-who"><b>' + esc(r.name) + '</b><small>' + esc(r.meta) + '</small></div>' + stars + '</div><p>' + escArea(r.text) + '</p></article>').join('');
 }
+const FLYER_DEFAULT = process.env.FLYER_STORE || '';
 function globals(s, isJs) {
+  if (!isJs) { const fl = C.site['site.flyer'] || FLYER_DEFAULT; s = s.replace(FLYER, (m, inner) => (/^\d{1,8}$/.test(fl) ? inner.split('__FLYER__').join(fl) : '')); }
   const ph = C.site['site.phone'], fx = C.site['site.fax'], em = C.site['site.email'];
   if (ph) { const d = ph.replace(/\D/g, ''); const d10 = d.length === 11 && d[0] === '1' ? d.slice(1) : d; if (d10.length === 10) s = s.split('tel:+16132533334').join('tel:+1' + d10); s = s.split('(613) 253-3334').join(ph); }
   if (fx) s = s.split('(613) 691-7667').join(fx);
@@ -122,6 +126,7 @@ function apply(b) {
     if (v === null || (typeof v === 'string' && !v.trim())) { delete C.site[k]; continue; }
     if (typeof v !== 'string') throw bad('Invalid value.');
     const t = v.trim();
+    if (k === 'site.flyer' && !/^\d{1,8}$/.test(t)) throw bad('The store number should be digits only, for example 7058.');
     if (k === 'site.email' && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']{2,}$/.test(t)) throw bad('Please enter a valid email address.');
     if ((k === 'site.phone' || k === 'site.fax') && (!/^[0-9 ()+.\-]{7,24}$/.test(t) || t.replace(/\D/g, '').length < 10)) throw bad('Please enter a phone number with the area code, using only digits, spaces, dashes and brackets.');
     C.site[k] = t;

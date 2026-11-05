@@ -733,3 +733,7 @@ a.card .arrow{display:inline-block;margin-top:16px;font-weight:700}
 /* photos placed through the admin */
 .has-img{position:relative;overflow:hidden;background:none!important}
 .has-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+
+.flyerbox{margin-top:32px;background:linear-gradient(180deg,#fff,#F4F7FC);border:1px solid var(--ring);border-radius:var(--r2);box-shadow:var(--sh);padding:20px;overflow:hidden;min-height:240px}
+.flyerbox>div{width:100%}
+@media (max-width:640px){.flyerbox{padding:10px}}

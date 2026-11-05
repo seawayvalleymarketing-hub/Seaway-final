@@ -47,7 +47,7 @@ const isAdmin = (req) => !!auth.readToken(cookies(req).sv_admin);
 const SEC = {
   'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://pcc-flyer-embed.pharmachoice-canada.workers.dev; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://pcc-flyer-embed.pharmachoice-canada.workers.dev; frame-src https:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 };
 
 // ---------- fax model validation ----------
